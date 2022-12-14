@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+import { getResponse } from './Fetch/api';
 import Searchbar from './Searchbar/Searchbar';
 import ImageGallery from './ImageGallery/ImageGallery';
 import Loader from './Loader/Loader';
@@ -9,44 +10,42 @@ import Button from './Button/Button';
 
 export default class App extends Component {
   state = {
-    URL: 'https://pixabay.com/api/',
-    API_KEY: '31234346-99e51484fd3cfaa63b80cb557',
     pictures: [],
     error: '',
     status: 'idle',
     page: 1,
     query: '',
     totalHits: null,
+    showLoadMore: false,
   };
 
-  fetchImg = () => {
-    return fetch(
-      `${this.state.URL}?q=${this.state.query}&page=${this.state.page}&key=${this.state.API_KEY}&image_type=photo&orientation=horizontal&per_page=12`
-    )
-      .then(res => {
-        if (res.ok) {
-          return res.json();
+  fetchImg = async () => {
+    try {
+      const response = await getResponse(this.state.query, this.state.page);
+      console.log(response.length);
+      if (response.length === 0) {
+        toast.error('Did find anything, mate');
+      }
+      const selectedProperties = response.map(
+        ({ id, largeImageURL, webformatURL }) => {
+          return { id, largeImageURL, webformatURL };
         }
-        return Promise.reject(new Error('Failed to find any images'));
-      })
-      .then(pictures => {
-        if (!pictures.total) {
-          toast.error('Did find anything, mate');
-        }
-        const selectedProperties = pictures.hits.map(
-          ({ id, largeImageURL, webformatURL }) => {
-            return { id, largeImageURL, webformatURL };
-          }
-        );
-        this.setState(prevState => {
-          return {
-            pictures: [...prevState.pictures, ...selectedProperties],
-            status: 'resolved',
-            totalHits: pictures.total,
-          };
-        });
-      })
-      .catch(error => this.setState({ error, status: 'rejected' }));
+      );
+      this.setState(prevState => {
+        return {
+          pictures: [...prevState.pictures, ...selectedProperties],
+          status: 'resolved',
+          totalHits: response.length,
+        };
+      });
+      if (response.length < 12) {
+        this.setState({ showLoadMore: false });
+      } else {
+        this.setState({ showLoadMore: true });
+      }
+    } catch (error) {
+      this.setState({ error, status: 'rejected', showLoadMore: false });
+    }
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -74,14 +73,12 @@ export default class App extends Component {
   };
 
   render() {
-    const { pictures, status, totalHits } = this.state;
+    const { pictures, status, showLoadMore } = this.state;
     return (
       <>
         <Searchbar onSubmit={this.processSubmit} />
         {pictures.length && <ImageGallery images={pictures} />}
-        {totalHits > pictures.length && (
-          <Button onClick={this.handleLoadMore} />
-        )}
+        {showLoadMore && <Button onClick={this.handleLoadMore} />}
         {status === 'pending' && <Loader />}
         <ToastContainer autoClose={2000} />
       </>

@@ -20,9 +20,15 @@ export default class Modal extends Component {
     }
   };
 
+  handleBackdrop = e => {
+    if (e.currentTarget === e.target) {
+      this.props.closeModal();
+    }
+  };
+
   render() {
     return createPortal(
-      <div className={styles.overlay}>
+      <div className={styles.overlay} onClick={this.handleBackdrop}>
         <div className={styles.modal}>
           <img src={this.props.pic} alt="" />
         </div>
@@ -35,4 +41,5 @@ export default class Modal extends Component {
 Modal.propTypes = {
   onClose: PropTypes.func.isRequired,
   pic: PropTypes.string.isRequired,
+  closeModal: PropTypes.func.isRequired,
 };

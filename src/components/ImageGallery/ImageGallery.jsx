@@ -11,41 +11,52 @@ export default class ImageGallery extends Component {
     bigPic: null,
   };
 
-  componentDidMount() {
-    document.addEventListener('click', e => {
-      if (e.target.nodeName !== 'IMG') {
-        this.setState({ showModal: false });
-        return;
-      } else {
-        let picture = this.props.images.filter(obj => {
-          return obj.id === parseInt(e.target.alt);
-        });
-        this.setState({ bigPic: picture[0].largeImageURL });
-      }
-    });
-  }
+  // componentDidMount() {
+  //   document.addEventListener('click', e => {
+  //     if (e.target.nodeName !== 'IMG') {
+  //       this.setState({ showModal: false });
+  //       return;
+  //     } else {
+  //       let picture = this.props.images.filter(obj => {
+  //         return obj.id === parseInt(e.target.alt);
+  //       });
+  //       this.setState({ bigPic: picture[0].largeImageURL });
+  //     }
+  //   });
+  // }
 
-  toggleModal = () => {
+  toggleModal = bigPic => {
     this.setState(({ showModal }) => ({ showModal: !showModal }));
+    this.setState({ bigPic: bigPic });
+  };
+
+  closeModal = () => {
+    this.setState({ showModal: false, bigPic: '' });
   };
 
   render() {
     const { showModal, bigPic } = this.state;
     return (
       <>
-        <ul className={styles.gallery} onClick={this.toggleModal}>
+        <ul className={styles.gallery}>
           {this.props.images.map(img => {
             return (
               <ImageGalleryItem
                 key={nanoid()}
                 smallImgURL={img.webformatURL}
                 id={img.id}
+                onClick={this.toggleModal}
+                largeImageURL={img.largeImageURL}
               />
             );
           })}
         </ul>
         {showModal && bigPic && (
-          <Modal onClose={this.toggleModal} pic={bigPic} />
+          <Modal
+            onClose={this.toggleModal}
+            pic={bigPic}
+            closeModal={this.closeModal}
+          />
         )}
       </>
     );
